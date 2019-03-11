@@ -11,11 +11,14 @@ import UIKit
 class ToDoViewController: UITableViewController {
 
     var toDoArrey = ["Empacar","sacar basura","trastear"]
-    
+    let defaults = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        if let item = defaults.array(forKey: "ToDoListArray") as? [String]{
+            toDoArrey = item
+        }
     }
     
     // MARK - Table View Datasource Methods
@@ -51,6 +54,7 @@ class ToDoViewController: UITableViewController {
         let action = UIAlertAction(title: "Ingresar", style: .default) { (action) in
             print (textfield.text!)
             self.toDoArrey.append(textfield.text!)
+            self.defaults.set(self.toDoArrey, forKey: "ToDoListArray")
             self.tableView.reloadData()
         }
         
