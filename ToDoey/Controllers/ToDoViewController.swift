@@ -10,15 +10,15 @@ import UIKit
 
 class ToDoViewController: UITableViewController {
 
-    var toDoArrey = ["Empacar","sacar basura","trastear"]
+    var toDoArrey = [TodoeyItem]()
     let defaults = UserDefaults.standard
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        if let item = defaults.array(forKey: "ToDoListArray") as? [String]{
-            toDoArrey = item
-        }
+        let newItem = TodoeyItem()
+        newItem.title = "Find Mike"
+        toDoArrey.append(newItem)
     }
     
     // MARK - Table View Datasource Methods
@@ -26,9 +26,17 @@ class ToDoViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return toDoArrey.count
     }
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
-        cell.textLabel?.text = toDoArrey[indexPath.row]
+        let item = toDoArrey[indexPath.row]
+        cell.textLabel?.text = item.title
+        
+        // Ternay operator ==>
+        // value = condition? valueIfIsTrue : valueIfIsFalse
+        
+        cell.accessoryType = item.done ? .checkmark : .none
+        
         return cell
     }
     
@@ -37,12 +45,8 @@ class ToDoViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 //        print (indexPath.row)
 //        print (toDoArrey[indexPath.row])
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        }else{
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
-        
+        toDoArrey[indexPath.row].done = !toDoArrey[indexPath.row].done
+        tableView.reloadData()
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
@@ -52,9 +56,13 @@ class ToDoViewController: UITableViewController {
         var textfield = UITextField()
         let alert = UIAlertController(title: "Ingresa Un ToDoey", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Ingresar", style: .default) { (action) in
+            
             print (textfield.text!)
-            self.toDoArrey.append(textfield.text!)
-            self.defaults.set(self.toDoArrey, forKey: "ToDoListArray")
+            
+            let newItem = TodoeyItem()
+            newItem.title = textfield.text!
+            self.toDoArrey.append(newItem)
+            //self.defaults.set(self.toDoArrey, forKey: "ToDoListArray")
             self.tableView.reloadData()
         }
         
