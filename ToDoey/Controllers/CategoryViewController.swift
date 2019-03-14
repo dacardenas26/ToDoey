@@ -7,12 +7,13 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class CategoryViewController: UITableViewController {
     
-    var categoryArrey : [Categorys] = [Categorys]()
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    let realm = try! Realm()
+    
+    var categoryArrey : Results<Categorys>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -22,13 +23,13 @@ class CategoryViewController: UITableViewController {
     // MARK: - Table view data source
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categoryArrey.count
+        return categoryArrey?.count ?? 1
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "categoryCell", for: indexPath)
-        let item = categoryArrey[indexPath.row]
-        cell.textLabel?.text = item.name
+        let item = categoryArrey?[indexPath.row]
+        cell.textLabel?.text = item?.name ?? "no hay categorias todavia"
         
         // Ternay operator ==>
         // value = condition? valueIfIsTrue : valueIfIsFalse
@@ -42,11 +43,9 @@ class CategoryViewController: UITableViewController {
             
             print (textfield.text!)
             
-            let newCategory = Categorys(context: self.context)
+            let newCategory = Categorys()
             newCategory.name = textfield.text!
-            self.categoryArrey.append(newCategory)
-            //self.defaults.set(self.toDoArrey, forKey: "ToDoListArray")
-            self.saveFiles()
+            self.save(categorys: newCategory)
             
         }
         
@@ -64,13 +63,15 @@ class CategoryViewController: UITableViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
          let destinationVC =  segue.destination as! ToDoViewController
         if let indexPath = tableView.indexPathForSelectedRow {
-           destinationVC.selectedCategory = categoryArrey[indexPath.row]
+           destinationVC.selectedCategory = categoryArrey?[indexPath.row]
         }
     }
     
-    func saveFiles(){
+    func save(categorys: Categorys){
         do {
-            try context.save()
+            try realm.write {
+                realm.add(categorys)
+                }
         }catch{
             print("Error saving category \(error)")
         }
@@ -79,13 +80,8 @@ class CategoryViewController: UITableViewController {
     
     //MARK - extra function
     
-    func loadCategories(with request: NSFetchRequest<Categorys> = Categorys.fetchRequest()){
-        do {
-            categoryArrey = try context.fetch(request)
-        }
-        catch{
-            print ("error retriving the data: \(error)")
-        }
+    func loadCategories(){
+        categoryArrey = realm.objects(Categorys.self)
         tableView.reloadData()
     }
     
@@ -94,14 +90,12 @@ class CategoryViewController: UITableViewController {
 //MARK: - Search bat Methods
 
 extension CategoryViewController: UISearchBarDelegate{
-    
+
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        let request : NSFetchRequest<Categorys> = Categorys.fetchRequest()
-        request.predicate = NSPredicate(format: "name CONTAINS[cd] %@", searchBar.text!)
-        request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
-        loadCategories(with: request)
+        categoryArrey = categoryArrey?.filter("name CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "name", ascending: true)
+        tableView.reloadData()
     }
-    
+
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         if searchBar.text?.count == 0{
             loadCategories()
